@@ -13,8 +13,21 @@ data Direction = North | South | East | West deriving (Show, Eq)
 -- ---------------------------------------------------------------------------
 
 -- Question 1
+myTranspose :: [[a]] -> [[a]]
+myTranspose [] = []
+myTranspose ([] : _) = []
+myTranspose xss = map head xss : myTranspose (map tail xss)
+
 matrixMultiplication :: [[Int]] -> [[Int]] -> [[Int]]
-matrixMultiplication = undefined
+matrixMultiplication a b
+  | null a || null b = []
+  | length (head a) /= length b = []
+  | otherwise =
+      [ [ sum (zipWith (*) row col)
+          | col <- myTranspose b ]
+        | row <- a
+      ]
+
 
 -- Question 2
 -- listStats :: LinkedList Int -> LinkedList Int
