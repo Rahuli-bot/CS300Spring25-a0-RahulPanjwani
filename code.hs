@@ -157,8 +157,37 @@ longestPrimeSeq xs = helper xs 0 0
 -- ---------------------------------------------------------------------------
 
 -- Question 7
+isLeaf :: Tree a -> Bool
+isLeaf (TreeNode Nil _ Nil) = True
+isLeaf _                    = False
+
+prefixMatch :: String -> String -> Bool
+prefixMatch _ []          = True       
+prefixMatch [] _          = False
+prefixMatch (x:xs) (y:ys) = (x == y) && prefixMatch xs ys
+
+isSubstring :: String -> String -> Bool
+isSubstring _ ""   = True   
+isSubstring [] _   = False  
+isSubstring s sub
+  | prefixMatch s sub = True
+  | otherwise         = isSubstring (tail s) sub
+
+processChild :: String -> Tree String -> Tree String
+processChild _ Nil = Nil
+processChild parent t@(TreeNode _ x _) 
+  | isLeaf t  = if isSubstring parent x then t else Nil
+  | otherwise = leafDeletion t
+
 leafDeletion :: Tree String -> Tree String
-leafDeletion = undefined
+leafDeletion Nil = Nil
+leafDeletion t@(TreeNode left v right)
+  | isLeaf t  = Nil 
+  | otherwise = TreeNode (processChild v left) v (processChild v right)
+
+
+
+
 
 -- Question 8
 textEditor :: String -> String
