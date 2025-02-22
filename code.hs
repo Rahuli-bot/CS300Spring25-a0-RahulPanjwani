@@ -30,11 +30,6 @@ matrixMultiplication a b
 
 
 -- Question 2
--- listStats :: LinkedList Int -> LinkedList Int
--- listStats = 
-
-data LinkedList a = Null | ListNode a (LinkedList a) deriving (Show, Eq)
-
 tolist :: LinkedList a -> [a]
 tolist Null = []
 tolist (ListNode x rest) = x : tolist rest
@@ -72,15 +67,14 @@ listStats :: LinkedList Int -> LinkedList Int
 listStats lst = ListNode mmean (ListNode mem Null)
     where
         list = tolist lst
-        sortedList = mergeSort list  -- Sort the list manually
-        mmean = if null list then 0 else sum list `div` length list  -- Mean
-        mem = median sortedList  -- Median
+        sortedList = mergeSort list  
+        mmean = if null list then 0 else sum list `div` length list
+        mem = median sortedList  
 
 
 
 
 -- Question 3
-
 triplets :: [a] -> [[a]]
 triplets (a:b:c:xs) = [a, b, c] : triplets (b:c:xs)
 triplets _ = []
@@ -105,7 +99,6 @@ largestAdjacentSum xs = (maxTriplet !! 0, maxTriplet !! 1, maxTriplet !! 2)
     idx = indexOfMax sums   
     maxTriplet = t !! idx   
 
-
 -- Question 4
 helper :: Int -> [Int] -> [Int]
 helper 1 l = 1 : l
@@ -116,8 +109,6 @@ helper x l
 
 collatzConjecture :: Int -> (Int, Int)
 collatzConjecture x = (length(helper x []) - 1,maximum(helper x []))
-
-
 
 -- Question 5
 helper :: Int-> Int-> [Int]-> Int-> Int -> Int
@@ -132,23 +123,19 @@ productExceptSelf xs = [helper i 0 xs (length xs-1) 1 | i <- [0..length(xs)-1] ]
 
 
 -- Question 6
--- Function to get the factors of a number
 factors :: Int -> [Int]
 factors n = [x | x <- [1..n], n `mod` x == 0]
 
--- Function to check if a number is prime
 prime :: Int -> Bool
 prime x = factors x == [1, x]
 
--- Helper function to recursively find the longest sequence of consecutive primes
 helper :: [Int] -> Int -> Int -> Int
 helper [] currentCount maxSeq = maxSeq
 helper (x:xs) currentCount maxSeq
   | prime x && currentCount +1 > maxSeq = helper xs (currentCount + 1) (currentCount + 1)  -- Increase count if prime and update maxSeq
-  | prime x = helper xs (currentCount + 1) maxSeq  -- Increase count if prime and update maxSeq
-  | otherwise = helper xs 0 maxSeq  -- Reset count if not prime
+  | prime x = helper xs (currentCount + 1) maxSeq  
+  | otherwise = helper xs 0 maxSeq  
 
--- Main function to find the longest prime sequence
 longestPrimeSeq :: [Int] -> Int
 longestPrimeSeq [] = 0
 longestPrimeSeq xs = helper xs 0 0
@@ -186,9 +173,6 @@ leafDeletion t@(TreeNode left v right)
   | otherwise = TreeNode (processChild v left) v (processChild v right)
 
 
-
-
-
 -- Question 8
 textEditor :: String -> String
 textEditor s = reverse (process s [] [])
@@ -204,8 +188,6 @@ textEditor s = reverse (process s [] [])
       | c == '@' = if null del
                       then process cs cur del   
                       else process cs ((head del) : cur) (tail del)
-
-
 
 
 -- Question 9
@@ -244,8 +226,56 @@ halkiOs path = joinPath (processParts (splitPath path))
 
 
 -- Question 10
+palindromeSwapsForString :: String -> Int
+palindromeSwapsForString s
+  | not (canFormPalindrome s) = -1
+  | otherwise                 = go s 0
+  where
+    canFormPalindrome :: String -> Bool
+    canFormPalindrome s = oddCount <= 1
+      where
+        count c = length (filter (== c) s)
+        unique []     = []
+        unique (x:xs) = x : unique (filter (/= x) xs)
+        oddCount = length (filter (\c -> odd (count c)) (unique s))
+    
+    swapAt :: Int -> String -> String
+    swapAt i xs =
+      let (prefix, rest) = splitAt i xs
+      in case rest of
+           (x:y:zs) -> prefix ++ y : x : zs
+           _        -> xs
+
+    findMatch :: String -> Char -> Int -> Int
+    findMatch xs target j
+      | j < 0          = 0
+      | xs !! j == target = j
+      | otherwise      = findMatch xs target (j - 1)
+  
+    bubble :: String -> Int -> (String, Int)
+    bubble xs k
+      | k == length xs - 1 = (xs, 0)
+      | otherwise =
+          let xs' = swapAt k xs
+              (xs'', cnt) = bubble xs' (k + 1)
+          in (xs'', cnt + 1)
+  
+    go :: String -> Int -> Int
+    go xs swaps
+      | length xs <= 1 = swaps
+      | head xs == last xs = go (init (tail xs)) swaps
+      | otherwise =
+          let n = length xs
+              k = findMatch xs (head xs) (n - 2)
+          in if k == 0 then
+                go (swapAt 0 xs) (swaps + 1)
+             else
+                let (xs', count) = bubble xs k
+                in go (init (tail xs')) (swaps + count)
+
 palindromeSwaps :: [String] -> Int
-palindromeSwaps = undefined
+palindromeSwaps ss = sum (map palindromeSwapsForString ss)
+
 
 -- Question 11
 maxStreak :: [Int] -> Int
@@ -345,7 +375,35 @@ mazePathFinder = undefined
 
 -- Question 15
 halloweenEscape :: [(String, String)] -> Int
-halloweenEscape = undefined
+halloweenEscape spots 
+  | null spots = 0
+  | otherwise  = bfs spots 0 (length spots - 1)
+
+bfs :: [(String, String)] -> Int -> Int -> Int
+bfs spots start target = go [start] [] 0
+  where
+    n = length spots
+    go :: [Int] -> [Int] -> Int -> Int
+    go [] _ _ = -1  
+    go current visited moves
+      | target `elem` current = moves
+      | otherwise =
+          let next = concatMap (neighbors spots n) current
+              newNext = filter (\j -> notElem j (visited ++ current)) next
+          in go newNext (visited ++ current) (moves + 1)
+
+neighbors :: [(String, String)] -> Int -> Int -> [Int]
+neighbors spots n i =
+    let (house, room) = spots !! i
+       
+       
+        adj = [ j | j <- [i-1, i+1], j >= 0, j < n ]
+        
+        
+        teleport = [ j | j <- [0 .. n-1], j /= i, 
+                           let (h2, r2) = spots !! j, r2 == room, h2 /= house ]
+    in adj ++ teleport
+
 
 -- Main Function
 main :: IO ()
