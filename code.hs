@@ -191,11 +191,57 @@ leafDeletion t@(TreeNode left v right)
 
 -- Question 8
 textEditor :: String -> String
-textEditor = undefined
+textEditor s = reverse (process s [] [])
+  where
+    
+    process :: String -> String -> String -> String
+    process [] cur _ = cur
+    process (c:cs) cur del
+      | c /= '#' && c /= '@' = process cs (c:cur) del
+      | c == '#' = if null cur 
+                      then process cs cur del   
+                      else process cs (tail cur) ((head cur) : del)
+      | c == '@' = if null del
+                      then process cs cur del   
+                      else process cs ((head del) : cur) (tail del)
+
+
+
 
 -- Question 9
 halkiOs :: String -> String
-halkiOs = undefined
+halkiOs path = joinPath (processParts (splitPath path))
+  where
+   
+    splitPath :: String -> [String]
+    splitPath s = splitHelper s []
+      where
+        splitHelper [] current = [reverse current]
+        splitHelper (c:cs) current
+          | c == '/'  = reverse current : splitHelper cs []
+          | otherwise = splitHelper cs (c:current)
+
+    
+    processParts :: [String] -> [String]
+    processParts parts = reverse (processHelper parts [])
+      where
+        processHelper [] stack = stack
+        processHelper (p:ps) stack
+          | p == ""  = processHelper ps stack      
+          | p == "." = processHelper ps stack      
+          | p == ".." = processHelper ps (if null stack then stack else tail stack)
+          | otherwise = processHelper ps (p:stack)
+
+   
+   
+    joinPath :: [String] -> String
+    joinPath [] = "/"  
+    joinPath parts = "/" ++ join parts
+      where
+        join [] = ""
+        join [x] = x
+        join (x:xs) = x ++ "/" ++ join xs
+
 
 -- Question 10
 palindromeSwaps :: [String] -> Int
@@ -203,19 +249,95 @@ palindromeSwaps = undefined
 
 -- Question 11
 maxStreak :: [Int] -> Int
-maxStreak = undefined
+maxStreak xs = helper (removeDuplicates (mergeSort xs)) 1 1
+  where
+    helper :: [Int] -> Int -> Int -> Int
+    helper [] current maxS = maxS
+    helper [x] current maxS = max current maxS
+    helper (x:y:rest) current maxS
+      | y == x + 1 = helper (y:rest) (current + 1) (max (current + 1) maxS)
+      | otherwise  = helper (y:rest) 1 maxS
+
+mergeSort :: [Int] -> [Int]
+mergeSort []  = []
+mergeSort [x] = [x]
+mergeSort xs  = merge (mergeSort left) (mergeSort right)
+  where
+    (left, right) = splitAt (length xs `div` 2) xs
+
+merge :: [Int] -> [Int] -> [Int]
+merge xs [] = xs
+merge [] ys = ys
+merge (x:xs) (y:ys)
+  | x <= y    = x : merge xs (y:ys)
+  | otherwise = y : merge (x:xs) ys
+
+removeDuplicates :: [Int] -> [Int]
+removeDuplicates []       = []
+removeDuplicates [x]      = [x]
+removeDuplicates (x:y:xs)
+  | x == y    = removeDuplicates (y:xs)
+  | otherwise = x : removeDuplicates (y:xs)
+
 
 -- ---------------------------------------------------------------------------
 -- -----------------------------Category: Hard--------------------------------
 -- ---------------------------------------------------------------------------
 
 -- Question 12
+isLeaf :: Tree a -> Bool
+isLeaf (TreeNode Nil _ Nil) = True
+isLeaf _                    = False
+
+transform :: (Num a) => Tree a -> (a, Tree a)
+transform Nil = (0, Nil)
+transform (TreeNode left v right) = (totalSum, TreeNode leftTrans newVal rightTrans)
+  where
+    (sumLeft, leftTrans)   = transform left
+    (sumRight, rightTrans) = transform right
+    newVal   = sumRight - sumLeft 
+    totalSum = sumLeft + v + sumRight
+
+pruneOnce :: (Eq a, Num a) => Tree a -> Tree a
+pruneOnce Nil = Nil
+pruneOnce t@(TreeNode left v right)
+  | isLeaf t && v == 0 = Nil
+  | otherwise          = TreeNode (pruneOnce left) v (pruneOnce right)
+
+prune :: (Eq a, Num a) => Tree a -> Tree a
+prune t = let t' = pruneOnce t
+          in if t' == t then t else prune t'
+
 treeDeduction :: (Eq a, Num a) => Tree a -> Tree a
-treeDeduction = undefined
+treeDeduction t = prune transformed
+  where
+    (_, transformed) = transform t
+
 
 -- Question 13
-poisonSpill :: [(Int, Int, Int)] -> Int
-poisonSpill = undefined
+
+poisonSpill :: [(Int,Int,Int)] -> Int
+poisonSpill containers 
+  | null containers = 0
+  | otherwise       = maximum [ length (dfs containers i []) | i <- [0 .. n - 1] ]
+  where
+    n = length containers
+
+dfs :: [(Int,Int,Int)] -> Int -> [Int] -> [Int]
+dfs containers i visited
+  | i `elem` visited = visited 
+  | otherwise =
+      let visited' = i : visited
+          (x, y, r) = containers !! i
+          n = length containers
+         
+          neighbors = [ j | j <- [0 .. n - 1],
+                            j /= i,
+                            not (j `elem` visited'),
+                            let (xj, yj, _) = containers !! j,
+                            (x - xj)^2 + (y - yj)^2 <= r*r ]
+      in foldl (\acc j -> dfs containers j acc) visited' neighbors
+
 
 -- Question 14
 mazePathFinder :: [[Char]] -> [Direction]
